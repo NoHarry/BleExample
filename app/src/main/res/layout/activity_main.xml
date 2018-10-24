@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  tools:context=".MainActivity">
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="扫描"
+    android:id="@+id/btn_scan"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="停止扫描"
+    android:id="@+id/btn_stop_scan"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="连接"
+    android:id="@+id/btn_connect"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="读"
+    android:id="@+id/btn_read"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="写"
+    android:id="@+id/btn_write"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="通知"
+    android:id="@+id/btn_notify"
+    />
+  <Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="断开连接"
+    android:id="@+id/btn_disconnect"
+    />
+
+</LinearLayout>
