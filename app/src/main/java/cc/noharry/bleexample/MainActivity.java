@@ -3,6 +3,7 @@ package cc.noharry.bleexample;
 import android.Manifest.permission;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.LeScanCallback;
 import android.bluetooth.BluetoothDevice;
@@ -24,6 +25,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private UUID UUID_CHARREAD=UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb");
   private final static UUID CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
   private UUID UUID_CHARWRITE=UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb");
+  private UUID UUID_ADV_SERVER=UUID.fromString("0000ffe3-0000-1000-8000-00805f9b34fb");
   private BluetoothGattCharacteristic mCharacteristic;
   private Button mBtnDisableNotify;
   private TextView mTvScanState;
@@ -65,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private TextView mTvNotifyData;
   private EditText mEtWrite;
   private AtomicBoolean isScanning=new AtomicBoolean(false);
+  private static final int REQUEST_ENABLE_BT=100;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +106,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
       @Override
       public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
         L.i("onLeScan:"+" name:"+device.getName()+" mac:"+device.getAddress()+" rssi:"+rssi);
-
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
@@ -130,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
               mTvConnState.setText("断开连接");
             }
           });
-          gatt.close();
+//          gatt.close();
         }else if (newState==BluetoothProfile.STATE_CONNECTED){
           L.i("STATE_CONNECTED");
           L.i("start discoverServices");
@@ -290,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
     ScanSettings settings=new ScanSettings
         .Builder()
+        .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
         .build();
     List<ScanFilter> scanFilters=new ArrayList<>();
     bluetoothManager
@@ -305,7 +309,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     L.i("start scan");
     mTvScanState.setText("开始扫描");
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-    bluetoothManager.getAdapter().startLeScan(mLeScanCallback);
+//    UUID[] uuids=new UUID[]{UUID_ADV_SERVER};
+    bluetoothManager.getAdapter().startLeScan(/*uuids,*/mLeScanCallback);
   }
 
   private void stopScan(){
@@ -336,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private void disConnect(){
     if (mBluetoothGatt!=null){
       mBluetoothGatt.disconnect();
-      mBluetoothGatt.close();
+//      mBluetoothGatt.close();
     }
   }
 
@@ -406,12 +411,38 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
   }
 
+  public void openBtByUser(){
+    BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+    BluetoothAdapter mBluetoothAdapter = bluetoothManager.getAdapter();
+    if (!mBluetoothAdapter.isEnabled()) {
+
+      Intent enableBtIntent = new Intent(
+          BluetoothAdapter.ACTION_REQUEST_ENABLE);
+      startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+    }
+  }
+
+
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode){
+      case REQUEST_ENABLE_BT:
+        if (resultCode==Activity.RESULT_OK){
+          L.i("打开蓝牙成功");
+        }else if (resultCode==Activity.RESULT_CANCELED){
+          L.i("打开蓝牙失败");
+        }
+        break;
+    }
+  }
+
   /**
    * 打开蓝牙
    * @param listener
    * @return
    */
-  public boolean openBT(OnBTOpenStateListener listener){
+  public boolean openBt(OnBTOpenStateListener listener){
     btOpenStateListener=listener;
     BTStateReceiver receiver=new BTStateReceiver();
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
