@@ -54,11 +54,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private Button mBtnNotify;
   private BluetoothGattCallback mBluetoothGattCallback;
   private BluetoothGatt mBluetoothGatt;
-  private UUID UUID_SERVER=UUID.fromString("0000ffe5-0000-1000-8000-00805f9b34fb");
-  private UUID UUID_CHARREAD=UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb");
+  private final static UUID UUID_SERVER=UUID.fromString("0000ffe5-0000-1000-8000-00805f9b34fb");
+  private final static UUID UUID_CHARREAD=UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb");
   private final static UUID CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
-  private UUID UUID_CHARWRITE=UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb");
-  private UUID UUID_ADV_SERVER=UUID.fromString("0000ffe3-0000-1000-8000-00805f9b34fb");
+  private final static UUID UUID_CHARWRITE=UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb");
+  private final static UUID UUID_ADV_SERVER=UUID.fromString("0000ffe3-0000-1000-8000-00805f9b34fb");
   private BluetoothGattCharacteristic mCharacteristic;
   private Button mBtnDisableNotify;
   private TextView mTvScanState;
@@ -123,7 +123,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
       @Override
       public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         L.i("onConnectionStateChange status:" + status + " newState:" + newState);
-        mBluetoothGatt = gatt;
         if (newState==BluetoothProfile.STATE_DISCONNECTED){
           L.i("STATE_DISCONNECTED");
 
@@ -133,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
               mTvConnState.setText("断开连接");
             }
           });
-//          gatt.close();
+          gatt.close();
         }else if (newState==BluetoothProfile.STATE_CONNECTED){
           L.i("STATE_CONNECTED");
           L.i("start discoverServices");
@@ -287,7 +286,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   /**
    * 新的扫描方法
    */
-  @TargetApi(VERSION_CODES.LOLLIPOP)
   private void scanNew() {
     mTvScanState.setText("开始扫描");
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
@@ -332,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
    * @param device 需要连接的蓝牙设备
    */
   private void connect(BluetoothDevice device){
-    device.connectGatt(this, false,mBluetoothGattCallback);
+    mBluetoothGatt = device.connectGatt(this, false, mBluetoothGattCallback);
   }
 
   /**
@@ -345,6 +343,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
   }
 
+  /**
+   * 读特征
+   */
   private void read(){
     if (mBluetoothGatt!=null&&mCharacteristic!=null){
       L.i("开始读 uuid："+mCharacteristic.getUuid().toString());
@@ -354,9 +355,18 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
   }
 
+  /**
+   * 写特征
+   * @param data 最大20byte
+   */
   private void write(byte[] data){
     if (mBluetoothGatt!=null&&mCharacteristic!=null){
       L.i("开始写 uuid："+mCharacteristic.getUuid().toString()+" hex:"+byte2HexStr(data)+" str:"+new String(data));
+
+      mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+
+//      mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+
       mCharacteristic.setValue(data);
       mBluetoothGatt.writeCharacteristic(mCharacteristic);
     }else {
@@ -364,6 +374,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
   }
 
+  /**
+   * 开启通知
+   */
   private void enableNotify(){
     if (mBluetoothGatt!=null&&mCharacteristic!=null){
       BluetoothGattDescriptor descriptor = mCharacteristic
@@ -371,8 +384,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
       boolean local = mBluetoothGatt.setCharacteristicNotification(mCharacteristic, true);
       L.i("中央设备开启通知 结果:"+local);
       if (descriptor!=null){
+        int parentWriteType = mCharacteristic.getWriteType();
+        mCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         boolean remote = mBluetoothGatt.writeDescriptor(descriptor);
+        mCharacteristic.setWriteType(parentWriteType);
         L.i("外围设备开启通知 结果:"+remote);
       }
     }else {
@@ -380,6 +396,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
   }
 
+  /**
+   * 关闭通知
+   */
   private void disableNotify(){
     if (mBluetoothGatt!=null&&mCharacteristic!=null){
       BluetoothGattDescriptor descriptor = mCharacteristic
@@ -481,6 +500,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     void onBTOpen();
   }
 
+  /**
+   * 用于监听蓝牙开启状态广播
+   */
   private class BTStateReceiver extends BroadcastReceiver {
 
     @Override
