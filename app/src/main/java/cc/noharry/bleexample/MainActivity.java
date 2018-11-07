@@ -25,6 +25,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   private TextView mTvNotifyData;
   private EditText mEtWrite;
   private AtomicBoolean isScanning=new AtomicBoolean(false);
+  private Handler mHandler=new Handler();
   private static final int REQUEST_ENABLE_BT=100;
 
   @Override
@@ -315,13 +317,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     L.e("stopScan");
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
     bluetoothManager.getAdapter().stopLeScan(mLeScanCallback);
-    mTvScanState.setText("停止扫描");
+    //扫描真正停止很多时候有点延迟
+    mHandler.postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        mTvScanState.setText("停止扫描");
+      }
+    },500);
+
   }
 
   private void stopNewScan(){
     BluetoothManager bluetoothManager= (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
     bluetoothManager.getAdapter().getBluetoothLeScanner().stopScan(mScanCallback);
-    mTvScanState.setText("停止扫描");
+    //扫描真正停止很多时候有点延迟
+    mHandler.postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        mTvScanState.setText("停止扫描");
+      }
+    },500);
   }
 
 
